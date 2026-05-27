@@ -1,4 +1,7 @@
-﻿# 1.1.17
+﻿# 1.1.18
+- Starting work on adding support for Unity version 6000+
+
+# 1.1.17
 
 - Added `CustomBuildUrl` field in `AssetRipperSettings` to allow third-party AssetRipper builds
 - Fixed compatibility with newer AssetRipper versions

@@ -270,81 +270,97 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
             }
         }
         
-        private UniTask RunAssetRipper(string assetRipperExePath, string inputPath, string outputPath, string settingsPath) {
-            
-            #if UNITY_EDITOR_LINUX
-                assetRipperExePath = Path.ChangeExtension(assetRipperExePath, ".dll");
-            #endif
+        private async UniTask RunAssetRipper(string assetRipperExePath, string inputPath, string outputPath, string settingsPath) 
+        {
+        #if UNITY_EDITOR_LINUX
+            assetRipperExePath = Path.ChangeExtension(assetRipperExePath, ".dll");
+        #endif
+
             Debug.Log($"Running AssetRipper at \"{assetRipperExePath}\" with \"{inputPath}\" and outputting into \"{outputPath}\"");
             Debug.Log($"Using data folder at \"{inputPath}\"");
             Debug.Log($"Outputting ripped assets at \"{outputPath}\"");
             Debug.Log($"Using settings from \"{settingsPath}\"");
-            
-            #if UNITY_EDITOR_LINUX
-            var process = new System.Diagnostics.Process()
-            {
-                StartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "dotnet",
-                    Arguments = $"\"{assetRipperExePath}\" \"{settingsPath}\" \"{outputPath}\" \"{inputPath}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                }
-            };
-            #else
-            var process = new System.Diagnostics.Process {
-                StartInfo = new System.Diagnostics.ProcessStartInfo {
-                    FileName = assetRipperExePath,
-                    Arguments = $"\"{settingsPath}\" \"{outputPath}\" \"{inputPath}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                }
-            };
-            #endif
-            
-            // run the process
-            try {
-                EditorUtility.DisplayCancelableProgressBar("Running AssetRipper", "", 0);
-                process.Start();
 
-                var exportCount = 0;
-                var totalExports = 5624f;
-                while (!process.StandardOutput.EndOfStream) {
-                    var line = process.StandardOutput.ReadLine();
-                    if (line is null) continue;
-                    
-                    // Debug.Log($"[AssetRipper] <i>{line}</i>");
-                    
-                    //? time estimation of three minutes
-                    if (line.Contains("Exporting")) {
+        #if UNITY_EDITOR_LINUX
+            var exeName = "dotnet";
+            var args = $"\"{assetRipperExePath}\" \"{settingsPath}\" \"{outputPath}\" \"{inputPath}\"";
+        #else
+            var exeName = assetRipperExePath;
+            var args = $"\"{settingsPath}\" \"{outputPath}\" \"{inputPath}\"";
+        #endif
+
+            var startInfo = new System.Diagnostics.ProcessStartInfo 
+            {
+                FileName = exeName,
+                Arguments = args,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = new System.Diagnostics.Process { StartInfo = startInfo };
+            var errorOutput = new System.Text.StringBuilder();
+
+            process.ErrorDataReceived += (sender, errorArgs) => 
+            {
+                if (!string.IsNullOrEmpty(errorArgs.Data)) 
+                {
+                    errorOutput.AppendLine(errorArgs.Data);
+                }
+            };
+
+            try 
+            {
+                EditorUtility.DisplayCancelableProgressBar("Running AssetRipper", "Starting...", 0);
+                process.Start();
+                process.BeginErrorReadLine();
+
+                var exportCount = 0f;
+                var totalExports = 100f; 
+
+                while (true) 
+                {
+                    var line = await process.StandardOutput.ReadLineAsync();
+                    if (line == null) break; // Stream ended
+
+                    var match = System.Text.RegularExpressions.Regex.Match(line, @"(\d+)\s*/\s*(\d+)");
+                    if (match.Success) 
+                    {
+                        exportCount = float.Parse(match.Groups[1].Value);
+                        totalExports = float.Parse(match.Groups[2].Value);
+                    } 
+                    else if (line.Contains("Exporting")) 
+                    {
                         exportCount++;
                     }
-                    if (EditorUtility.DisplayCancelableProgressBar("Running AssetRipper", line, exportCount / totalExports)) {
+
+                    if (EditorUtility.DisplayCancelableProgressBar("Running AssetRipper", line, exportCount / totalExports)) 
+                    {
                         process.Kill();
                         Debug.LogWarning("AssetRipper manually cancelled!");
                         break;
                     }
                 }
-                
+
                 EditorUtility.ClearProgressBar();
-                process.WaitForExit();
                 
-                // check for any errors
-                var errorOutput = process.StandardError.ReadToEnd();
-                if (process.ExitCode != 0) {
-                    throw new Exception($"AssetRipper failed to run with exit code {process.ExitCode}. Error: {errorOutput}");
+                while (!process.HasExited) 
+                {
+                    await UniTask.Yield();
                 }
-            } catch (Exception e) {
+
+                if (process.ExitCode != 0) 
+                {
+                    throw new Exception($"AssetRipper failed with exit code {process.ExitCode}. Error: {errorOutput}");
+                }
+            } 
+            catch (Exception e) 
+            {
                 EditorUtility.ClearProgressBar();
                 Debug.LogError($"Error running AssetRipper: {e}");
                 throw;
             }
-            
-            return UniTask.CompletedTask;
         }
 
         private void SanitizeFolders(string assetsRoot) {

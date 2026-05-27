@@ -1,55 +1,47 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Cysharp.Threading.Tasks;
-using UnityEditor;
 using UnityEngine;
 
-namespace Nomnom.UnityProjectPatcher.Editor.Steps {
-    /// <summary>
-    /// Sets up the default folders that the project will use.
-    /// </summary>
-    public readonly struct GenerateDefaultProjectStructureStep: IPatcherStep {
-        public UniTask<StepResult> Run() {
+namespace Nomnom.UnityProjectPatcher.Editor.Steps 
+{
+    public readonly struct GenerateDefaultProjectStructureStep: IPatcherStep 
+	{
+        public UniTask<StepResult> Run() 
+		{
             var settings = this.GetSettings();
             
-            // create paths
             try {
-                if (!PatcherUtility.TryToCreatePath(settings.ProjectUnityPath)) {
-                    return UniTask.FromResult(StepResult.Failure);
-                }
-            
-                if (!PatcherUtility.TryToCreatePath(settings.ProjectUnityAssetStorePath)) {
-                    return UniTask.FromResult(StepResult.Failure);
-                }
-                
-                if (!PatcherUtility.TryToCreatePath(settings.ProjectGameFullPath)) {
-                    return UniTask.FromResult(StepResult.Failure);
-                }
-                
-                if (!PatcherUtility.TryToCreatePath(settings.ProjectGameAssetsFullPath)) {
-                    return UniTask.FromResult(StepResult.Failure);
-                }
-                
-                if (!PatcherUtility.TryToCreatePath(settings.ProjectGameModsFullPath)) {
-                    return UniTask.FromResult(StepResult.Failure);
-                }
-                
-                if (!PatcherUtility.TryToCreatePath(Path.Combine(settings.ProjectGameModsFullPath, "plugins"))) {
-                    return UniTask.FromResult(StepResult.Failure);
-                }
-                
-                if (!PatcherUtility.TryToCreatePath(settings.ProjectGameToolsFullPath)) {
-                    return UniTask.FromResult(StepResult.Failure);
+                string[] pathsToCreate = 
+				{
+                    settings.ProjectUnityPath,
+                    settings.ProjectUnityAssetStorePath,
+                    settings.ProjectGameFullPath,
+                    settings.ProjectGameAssetsFullPath,
+                    settings.ProjectGameModsFullPath,
+                    Path.Combine(settings.ProjectGameModsFullPath, "plugins"),
+                    settings.ProjectGameToolsFullPath
+                };
+
+                foreach (var path in pathsToCreate) 
+				{
+                    if (!PatcherUtility.TryToCreatePath(path)) 
+					{
+                        Debug.LogError($"[GenerateDefaultProjectStructureStep] Failed to create or access path: {path}");
+                        return UniTask.FromResult(StepResult.Failure);
+                    }
                 }
 
                 var assetsPath = settings.ProjectGameAssetsPath;
                 var arSettings = this.GetAssetRipperSettings();
                 
-                // unsort folders so the path matching works properly
                 SortAssetTypesSteps.UnsortFolder(assetsPath, "MonoBehaviour", "ScriptableObject", arSettings);
                 SortAssetTypesSteps.UnsortFolder(assetsPath, "PrefabInstance", "Prefab", arSettings);
-            } catch {
-                Debug.LogError("Failed to create default project paths");
-                throw;
+            } 
+			catch (Exception ex) 
+			{
+                Debug.LogError($"[GenerateDefaultProjectStructureStep] Exception occurred:\n{ex}");
+                return UniTask.FromResult(StepResult.Failure);
             }
             
             return UniTask.FromResult(StepResult.Success);

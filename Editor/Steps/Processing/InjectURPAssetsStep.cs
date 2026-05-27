@@ -9,6 +9,8 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
     /// This attempts to find URP related assets in the project and inject them into
     /// the SRP pipeline.
     /// </summary>
+    
+    // May need to be Updated for Unity 6000+ in the future
     public readonly struct InjectURPAssetsStep: IPatcherStep {
         public UniTask<StepResult> Run() {
             var settings = this.GetSettings();

@@ -1056,11 +1056,9 @@ namespace Nomnom.UnityProjectPatcher.Editor {
         }
         
         private static IEnumerable<string> GetDefinitions(string text, params string[] names) {
-#if UNITY_2020_3_OR_NEWER
+            
             var namesString = $"({string.Join('|', names)})";
-#else
-            var namesString = $"({string.Join("|", names)})";
-#endif
+
             var regexGeneric = new Regex(namesString + @"\s+(?<TypeName>\w+)(?:\s*<(?<GenericParameters>\w+(?:,\s*\w+)*)?>)");
             
             // generics

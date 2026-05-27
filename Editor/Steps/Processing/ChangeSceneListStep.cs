@@ -3,6 +3,7 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using UnityEditor.Build.Profile;
 
 namespace Nomnom.UnityProjectPatcher.Editor.Steps {
     /// <summary>
@@ -44,11 +45,35 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
                     .ToArray();
             }
 
+#if UNITY_6000_0_OR_NEWER
+            var profile = GetOrCreateBuildProfile();
+            BuildProfile.SetActiveBuildProfile(profile);
+#endif
+
             EditorBuildSettings.scenes = scenes
                 .Select(scene => new EditorBuildSettingsScene(scene, true))
                 .ToArray();
             
             return UniTask.FromResult(StepResult.Success);
+        }
+
+        private static BuildProfile GetOrCreateBuildProfile() {
+            const string profilePath = "Assets/UnityProjectPatcher/DefaultBuildProfile.asset";
+
+            var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(profilePath);
+            if (profile) {
+                return profile;
+            }
+            
+            if (!Directory.Exists("Assets/UnityProjectPatcher")) {
+                Directory.CreateDirectory("Assets/UnityProjectPatcher");
+            }
+
+            profile = ScriptableObject.CreateInstance<BuildProfile>();
+            AssetDatabase.CreateAsset(profile, profilePath);
+            AssetDatabase.SaveAssets();
+
+            return profile;
         }
 
         public void OnComplete(bool failed) { }

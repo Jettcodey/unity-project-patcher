@@ -10,9 +10,9 @@
 <!-- Badges -->
 
 <span></span>
-<a href="https://github.com/nomnomab/unity-project-patcher/issues/">Report Bug</a>
+<a href="https://github.com/Jettcodey/unity-project-patcher/issues/">Report Bug</a>
 <span> · </span>
-<a href="https://github.com/nomnomab/unity-project-patcher/issues/">Request Feature</a>
+<a href="https://github.com/Jettcodey/unity-project-patcher/issues/">Request Feature</a>
 </h4>
 
 </div>
@@ -36,8 +36,11 @@
 <!-- About the Project -->
 ## About the Project
 This tool takes a unity game, extracts its assets/scripts/etc, and then generates a project for usage in the Unity editor.
+> [!CAUTION]
+> Linux support is **highly experimental**, and you may experience issues.\
+> Compatibility may also vary depending on the game wrapper being used, as Linux-specific differences need to be taken into account.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Only supports Mono games at the moment!
 >
 > This tool does not distribute game files. It simply works off of your copy of the game!
@@ -73,8 +76,9 @@ to set up its pipeline, and any specific fixing for that specific game.
 This project is bundled with the following packages:
 
 - [Editor Attributes](https://github.com/v0lt13/EditorAttributes)
-    - Is excluded before 2020.3
+    - Is excluded before 2020.3 and Slightly Modified for Unity 6000+
 - [UniTask](https://github.com/Cysharp/UniTask)
+    - Slightly Modified for Unity 6000+
 - [Quickenshtein](https://github.com/Turnerj/Quickenshtein)
 - [SharpZipLib](https://github.com/icsharpcode/SharpZipLib)
     - This is for older Unity versions
@@ -88,7 +92,7 @@ This project is bundled with the following packages:
 ### Gets Downloaded
 
 This project downloads a slightly tweaked version of [Asset Ripper](https://github.com/AssetRipper/AssetRipper), and is
-downloded from the releases of my fork [here](https://github.com/nomnomab/AssetRipper).
+downloded from the releases of my fork [here](https://github.com/Jettcodey/AssetRipper).
 
 > [!NOTE]  
 > This is only downloaded if it is missing locally from `[PROJECT_NAME]\AssetRipper`
@@ -99,7 +103,7 @@ downloded from the releases of my fork [here](https://github.com/nomnomab/AssetR
 You will have to make sure you have the following before using the tool in any way:
 
 - [Git](https://git-scm.com/download/win)
-- [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+- [.NET 10.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
     - To run Asset Ripper
 
 <!-- Installation -->
@@ -115,8 +119,7 @@ Install with the package manager:
 1. Open the Package Manager from `Window > Package Manager`
 2. Click the '+' button in the top-left of the window
 3. Click 'Add package from git URL'
-4. Provide the URL of the this git repository: `https://github.com/nomnomab/unity-project-patcher.git`
-    - If you are using a specific version, you can append it to the end of the git URL, such as `#v1.2.3`
+4. Provide the URL of the this git repository: `https://github.com/Jettcodey/unity-project-patcher.git`
 5. Click the 'add' button
 
 Install with the manifest.json:
@@ -124,17 +127,11 @@ Install with the manifest.json:
 1. Open the manifest at `[PROJECT_NAME]\Packages\manifest.json`
 2. Insert the following as an entry:
 
-```json
-"com.nomnom.unity-project-patcher": "https://github.com/nomnomab/unity-project-patcher.git"
-```
-
-- If you are using a specific version, you can append it to the end of the git URL, such as `#v1.2.3`
-
 #### BepInEx
 
 This can be installed via the tool window in-editor if a package depends on it.
 
-If you require BepInEx usage, then follow the instructions at https://github.com/nomnomab/unity-project-patcher-bepinex
+If you require BepInEx usage, then follow the instructions at https://github.com/Jettcodey/unity-project-patcher-bepinex
 
 <!-- Usage -->
 ## Usage
@@ -464,15 +461,7 @@ Ok so this is done in two ways:
    10. Wait for that to finish
    11. Done
 
-## Games I Tested With
+## Credits
 
-- [Lethal Company](https://github.com/nomnomab/unity-lc-project-patcher)
-- Content Warning
-    - Not fully, as Photon is being confusing
-- ULTRAKILL
-- Cult of the Lamb
-    - Asset Ripper bug is preventing this one
-
-<br/>
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/B0B6R2Z9U)
+- [nomnomab](https://github.com/nomnomab/) and Contributors for creating this Tool.
+- [MrNatanael](https://github.com/MrNatanael) for the initial work for getting this Tool to run on Linux.

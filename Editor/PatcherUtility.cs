@@ -30,6 +30,21 @@ namespace Nomnom.UnityProjectPatcher.Editor {
     public static class PatcherUtility {
         public static bool LockedAssemblies;
         
+        // Replaces exact folder node match safely
+        public static string ReplaceDirectoryNodeSafe(string fullPath, string targetNode, string replacementNode) {
+            if (string.IsNullOrEmpty(fullPath) || string.IsNullOrEmpty(targetNode)) return fullPath;
+
+            var nodes = fullPath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            for (int i = nodes.Length - 1; i >= 0; i--) {
+                if (string.Equals(nodes[i], targetNode, StringComparison.OrdinalIgnoreCase)) {
+                    nodes[i] = replacementNode ?? string.Empty;
+                    break;
+                }
+            }
+            
+            return string.Join(Path.DirectorySeparatorChar.ToString(), nodes);
+        }
+
         public static UPPatcherUserSettings GetUserSettings(this IPatcherStep step) {
             return GetUserSettings();
         }

@@ -4,13 +4,15 @@ namespace EditorAttributes
 {
     public class ReadOnlyAttribute : PropertyAttribute 
     {
-		/// <summary>
-		/// Attribute to make a field readonly in the inspector
-		/// </summary>
-		public ReadOnlyAttribute()
-#if UNITY_2023_3_OR_NEWER
-        : base(true) 
+        /// <summary>
+        /// Attribute to make a field readonly in the inspector
+        /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        public ReadOnlyAttribute() : base(true)
+        { }
+#else
+        public ReadOnlyAttribute()
+        { }
 #endif
-		{ }
     }
 }

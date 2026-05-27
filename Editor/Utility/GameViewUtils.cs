@@ -22,6 +22,10 @@ public static class GameViewUtils {
 
         // gameViewSizesInstance  = ScriptableSingleton<GameViewSizes>.instance;
         s_GameViewSizesType = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.GameViewSizes");
+        if (s_GameViewSizesType == null) {
+            UnityEngine.Debug.LogError("Failed to get UnityEditor.GameViewSizes type");
+            return;
+        }
         s_GameViewSizeSingleType = typeof(ScriptableSingleton<>).MakeGenericType(s_GameViewSizesType);
         s_GameViewSizes_GetGroup = s_GameViewSizesType.GetMethod("GetGroup");
 
@@ -104,6 +108,9 @@ public static class GameViewUtils {
 #elif UNITY_ANDROID
         return GameViewSizeGroupType.Android;
 #endif
-        // Add your own
+
+#pragma warning disable CS0162
+        return GameViewSizeGroupType.Standalone;
+#pragma warning restore CS0162
     }
 }

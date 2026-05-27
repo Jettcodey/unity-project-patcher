@@ -13,6 +13,8 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
     /// <br/><br/>
     /// Restarts the editor.
     /// </summary>
+    
+    // May need to be Updated for Unity 6000+ in the future
     public readonly struct InjectHDRPAssetsStep: IPatcherStep {
         // [MenuItem("Tools/UPP/Inject HDRP Assets (Will be removed)")]
         // public static void Foo() {

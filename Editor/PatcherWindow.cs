@@ -29,6 +29,10 @@ namespace Nomnom.UnityProjectPatcher.Editor {
 
         [InitializeOnLoadMethod]
         private static void OnLoad() {
+            if (UnityEngine.Application.isBatchMode || System.Environment.CommandLine.Contains("-noUpm")) 
+			{
+				return;
+			}
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             var window = Resources.FindObjectsOfTypeAll<PatcherWindow>().FirstOrDefault() as PatcherWindow;
             if (!window) {
@@ -85,7 +89,7 @@ namespace Nomnom.UnityProjectPatcher.Editor {
         private static IEnumerable<PackageVersion> GetPackageVersions() {
             // check tool version
             var packages = PatcherUtility.GetPackages();
-            var toolGit = "https://github.com/nomnomab/unity-project-patcher";
+            var toolGit = "https://github.com/Jettcodey/unity-project-patcher";
             var gameWrapper = PatcherUtility.GetGameWrapperAttribute();
             
             var currentToolVersion = packages.FirstOrDefault(x => x.name == "com.nomnom.unity-project-patcher")?.version;
@@ -104,7 +108,7 @@ namespace Nomnom.UnityProjectPatcher.Editor {
 
 #if UNITY_2020_3_OR_NEWER
             var currentBepInExVersion = packages.FirstOrDefault(x => x.name == "com.nomnom.unity-project-patcher-bepinex")?.version;
-            var bepinexGit = "https://github.com/nomnomab/unity-project-patcher-bepinex";
+            var bepinexGit = "https://github.com/Jettcodey/unity-project-patcher-bepinex";
             if (!string.IsNullOrEmpty(currentBepInExVersion) && PatcherUtility.TryFetchGitVersion(bepinexGit, out var bepinexVersion)) {
                 yield return new PackageVersion("BepInEx", bepinexGit, currentBepInExVersion, bepinexVersion);
                     
@@ -347,7 +351,7 @@ namespace Nomnom.UnityProjectPatcher.Editor {
                         
                         EditorUtility.DisplayProgressBar("Installing...", "Installing BepInEx...", 0.5f);
                         
-                        var request = Client.Add("https://github.com/nomnomab/unity-project-patcher-bepinex.git");
+                        var request = Client.Add("https://github.com/Jettcodey/unity-project-patcher-bepinex.git");
                         while (!request.IsCompleted) { }
                         if (request.Status == StatusCode.Success) {
                             EditorUtility.DisplayDialog("Success!", "BepInEx was installed successfully!", "OK");

@@ -4,13 +4,15 @@ namespace EditorAttributes
 {
     public class HideInEditModeAttribute : PropertyAttribute 
     {
-		/// <summary>
-		/// Attribute to hide a field when outside of play mode
-		/// </summary>
-		public HideInEditModeAttribute()
-#if UNITY_2023_3_OR_NEWER
-        : base(true) 
+        /// <summary>
+        /// Attribute to hide a field when outside of play mode
+        /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        public HideInEditModeAttribute() : base(true)
+        { }
+#else
+        public HideInEditModeAttribute()
+        { }
 #endif
-		{ }
     }
 }

@@ -10,6 +10,8 @@ using UnityEngine;
 namespace Nomnom.UnityProjectPatcher.Editor.Steps {
     public struct StepsExecutor {
         public static string CurrentStepName { get; private set; }
+
+        public static readonly string LogFilePath = Path.Combine(Directory.GetCurrentDirectory(), "PatcherPipeline.log");
         
         public IPatcherStep[] steps;
         public int index;
@@ -26,15 +28,28 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
             };
         }
 
+        private static void UnityLogCallback(string condition, string stackTrace, LogType type) {
+            try {
+                string logMsg = $"[{DateTime.Now:HH:mm:ss}] [{type}] {condition}\n";
+                if (type == LogType.Exception || type == LogType.Error) {
+                    logMsg += $"{stackTrace}\n";
+                }
+                File.AppendAllText(LogFilePath, logMsg);
+            } catch { } 
+        }
+
         public async UniTask<bool> Execute() {
             var stepIndex = 0;
             
+            Application.logMessageReceivedThreaded -= UnityLogCallback;
+            Application.logMessageReceivedThreaded += UnityLogCallback;
+
             try {
                 var stepsProgress = StepsProgress.FromPath(StepsProgress.SavePath);
                 if (stepsProgress != null) {
                     // might have crashed?
                     if (stepsProgress.InProgress) {
-                        Debug.LogWarning($"Seems like it might have crashed at step {stepIndex}, aborting...");
+                        Debug.LogWarning($"Detected previous crash at step {stepIndex}. Aborting auto-resume.");
                         ClearProgress(true);
                         return false;
                     }
@@ -50,95 +65,93 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
                     //     PatcherUtility.FocusUnity();
                     // }
                 }
-            } catch {
-                Debug.LogError("Failed to read steps progress");
+            } catch (Exception ex) {
+                Debug.LogError($"Failed to read steps progress:\n{ex}");
                 ClearProgress(true);
-                throw;
+                return false;
             }
             
             if (stepIndex >= steps.Length) {
                 Debug.Log("All steps are done");
                 ClearProgress(false);
                 EditorUtility.DisplayDialog("Done", "The project has been patched successfully!", "Ok");
+                Application.logMessageReceivedThreaded -= UnityLogCallback;
                 return true;
             }
 
             index = stepIndex;
 
             if (index == 0) {
+                if (File.Exists(LogFilePath)) {
+                    File.Delete(LogFilePath);
+                }
+                Debug.Log("---Starting New Patcher Pipeline---");
                 SetStartTime();
             }
             
             Debug.Log($"Starting on step {stepIndex} -> {steps[stepIndex].GetType().Name}");
             
             EditorUtility.DisplayProgressBar("Patching", "Patching", 0);
-            for (int i = index; i < steps.Length; i++) {
-                index = i;
-                
-                // save steps so far
-                SaveProgress(true);
-                
-                // todo: is this even needed?
-                // while (EditorApplication.isCompiling) {}
-                
-                var step = steps[i];
-                Debug.Log($"Starting step \"<b>{step.GetType().Name}</b>\"");
-                EditorUtility.DisplayProgressBar("Patching", step.GetType().Name, (float)i / steps.Length);
-                
-                try {
-                    var startTime = DateTime.Now;
-                    CurrentStepName = step.GetType().Name;
-                    var result = await step.Run();
-                    var endTime = DateTime.Now;
-                    var elapsedSeconds = (endTime - startTime).TotalSeconds;
-                    AppendStepResult(step, elapsedSeconds);
+            try {
+                for (int i = index; i < steps.Length; i++) {
+                    index = i;
+                    SaveProgress(true);
                     
-                    _progress.LastResult = result;
+                    var step = steps[i];
+                    Debug.Log($"Starting step \"{step.GetType().Name}\"");
+                    EditorUtility.DisplayProgressBar("Patching", step.GetType().Name, (float)i / steps.Length);
                     
-                    Debug.Log($"Step \"<b>{step.GetType().Name}</b>\" took {elapsedSeconds} seconds and returned {result}");
-                    
-                    switch (result) {
-                        case StepResult.RestartEditor:
-                            index++;
-                            SaveProgress(false);
-                            
-                            //? bypasses the recompilation of scripts so it doesn't trigger the
-                            //? patcher twice while closing
-                            AssetDatabase.StartAssetEditing();
-                            EditorApplication.OpenProject(Directory.GetCurrentDirectory());
-                            return false;
-                        case StepResult.Failure:
-                            throw new Exception($"Step {step.GetType().Name} failed");
-                        case StepResult.Recompile:
-                            index++;
-                            SaveProgress(false);
-                            
-                            if (PatcherUtility.LockedAssemblies) {
-                                PatcherUtility.LockedAssemblies = false;
-                                EditorApplication.UnlockReloadAssemblies();
-                            }
-                            
+                    try {
+                        var startTime = DateTime.Now;
+                        CurrentStepName = step.GetType().Name;
+                        var result = await step.Run();
+                        var endTime = DateTime.Now;
+                        var elapsedSeconds = (endTime - startTime).TotalSeconds;
+                        AppendStepResult(step, elapsedSeconds);
+                        
+                        _progress.LastResult = result;
+                        Debug.Log($"Step \"{step.GetType().Name}\" took {elapsedSeconds} seconds and returned {result}");
+                        
+                        switch (result) {
+                            case StepResult.RestartEditor:
+                                index++;
+                                SaveProgress(false);
+                                AssetDatabase.StartAssetEditing();
+                                EditorApplication.OpenProject(Directory.GetCurrentDirectory());
+                                return false;
+                            case StepResult.Failure:
+                                throw new Exception($"Step {step.GetType().Name} returned StepResult.Failure.");
+                            case StepResult.Recompile:
+                                index++;
+                                SaveProgress(false);
+                                
+                                if (PatcherUtility.LockedAssemblies) {
+                                    PatcherUtility.LockedAssemblies = false;
+                                    EditorApplication.UnlockReloadAssemblies();
+                                }
+                                
 #if UNITY_2020_3_OR_NEWER
-                            CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
+                                CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
 #else
-                            CompilationPipeline.RequestScriptCompilation();
+                                CompilationPipeline.RequestScriptCompilation();
 #endif
-                            return false;
-                        default:
-                            Debug.Log($"Step \"<b>{step.GetType().Name}</b>\" completed");
-                            break;
+                                return false;
+                            default:
+                                Debug.Log($"Step \"{step.GetType().Name}\" completed");
+                                break;
+                        }
+                    } catch (Exception ex) {
+                        Debug.LogError($"Step {step.GetType().Name} failed critically:\n{ex}");
+                        EditorUtility.DisplayDialog($"Step {step.GetType().Name} Failed", $"Error:\n{ex.Message}\n\nCheck PatcherPipeline.log for full details.", "Ok");
+                        ClearProgress(true);
+                        return false;
+                    } finally {
+                        EditorUtility.ClearProgressBar();
                     }
-                } catch {
-                    Debug.LogError($"Step {step.GetType().Name} failed");
-                    EditorUtility.DisplayDialog($"Step {step.GetType().Name} failed", "Check the console for details", "Ok");
-                    ClearProgress(true);
-                    EditorUtility.ClearProgressBar();
-                    throw;
                 }
-                finally {
-                    // any cleanup needed
-                    EditorUtility.ClearProgressBar();
-                }
+            } finally {
+                Application.logMessageReceivedThreaded -= UnityLogCallback;
+                EditorUtility.ClearProgressBar();
             }
             
             SetEndTime();
@@ -149,43 +162,30 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
         }
 
         public void SaveProgress(bool inProgress) {
-            _progress.CompletedSteps = steps.Take(index)
-                .Select(x => x.GetType().FullName)
-                .ToList();
-
+            _progress.CompletedSteps = steps.Take(index).Select(x => x.GetType().FullName).ToList();
             _progress.InProgress = inProgress;
-
-            var json = _progress.ToJson();
-            // Debug.Log(json);
-            File.WriteAllText(StepsProgress.SavePath, json);
+            File.WriteAllText(StepsProgress.SavePath, _progress.ToJson());
         }
 
         public void ClearProgress(bool failed) {
             CurrentStepName = null;
             File.Delete(StepsProgress.SavePath);
-            // ClearStepResults();
             EditorUtility.ClearProgressBar();
 
-            if (steps == null || steps.Length == 0) {
-                return;
-            }
+            if (steps == null || steps.Length == 0) return;
             
             foreach (var step in steps) {
                 try {
                     step?.OnComplete(failed);
-                } catch {
-                    Debug.LogError($"Failed to call OnComplete on \"{step?.GetType().Name}\"");
-                    throw;
+                } catch (Exception ex) {
+                    Debug.LogError($"Failed to call OnComplete on \"{step?.GetType().Name}\":\n{ex}");
                 }
             }
         }
         
         public void ClearStepResults() {
-            if (!File.Exists(StepsResults.SavePath)) {
-                return;
-            }
-            
-            File.Delete(StepsResults.SavePath);
+            if (File.Exists(StepsResults.SavePath)) 
+                File.Delete(StepsResults.SavePath);
         }
         
         public void AppendStepResult(IPatcherStep step, double elapsedSeconds) {
@@ -215,9 +215,7 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
         }
         
         private void SaveStepResults(StepsResults stepsResults) {
-            var json = stepsResults.ToJson();
-            // Debug.Log(json);
-            File.WriteAllText(StepsResults.SavePath, json);
+            File.WriteAllText(StepsResults.SavePath, stepsResults.ToJson());
         }
     }
 }
