@@ -1,4 +1,7 @@
-﻿# 1.1.18
+﻿# 1.1.19
+- fixed an Small issue with `ChangeSceneListStep` with Untiy versions below 6000+
+
+# 1.1.18
 - Starting work on adding support for Unity version 6000+
 
 # 1.1.17
