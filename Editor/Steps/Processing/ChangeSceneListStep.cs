@@ -3,7 +3,10 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+
+#if UNITY_6000_0_OR_NEWER
 using UnityEditor.Build.Profile;
+#endif
 
 namespace Nomnom.UnityProjectPatcher.Editor.Steps {
     /// <summary>
@@ -57,6 +60,7 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
             return UniTask.FromResult(StepResult.Success);
         }
 
+#if UNITY_6000_0_OR_NEWER
         private static BuildProfile GetOrCreateBuildProfile() {
             const string profilePath = "Assets/UnityProjectPatcher/DefaultBuildProfile.asset";
 
@@ -75,6 +79,7 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
 
             return profile;
         }
+#endif
 
         public void OnComplete(bool failed) { }
     }
