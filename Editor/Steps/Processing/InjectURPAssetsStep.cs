@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 #if UNITY_6000_0_OR_NEWER
 using UnityEngine.Rendering;
+using UnityEditor.Rendering;
 #if HAS_URP
 using UnityEngine.Rendering.Universal;
 #endif
@@ -66,7 +67,7 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
 #if HAS_URP
             GraphicsSettings.defaultRenderPipeline = urpSettings as RenderPipelineAsset;
             QualitySettings.renderPipeline = urpSettings as RenderPipelineAsset;
-            GraphicsSettings.RegisterRenderPipelineSettings<UniversalRenderPipeline>(urpGlobalSettings as RenderPipelineGlobalSettings);
+            EditorGraphicsSettings.SetRenderPipelineGlobalSettingsAsset(typeof(UnityEngine.Rendering.Universal.UniversalRenderPipeline), urpGlobalSettings as RenderPipelineGlobalSettings);
             
             Debug.Log($"Set GraphicsSettings.defaultRenderPipeline and QualitySettings.renderPipeline to \"{urpSettingsPath}\"");
             Debug.Log($"Registered Global Settings to \"{urpGlobalSettingsPath}\"");

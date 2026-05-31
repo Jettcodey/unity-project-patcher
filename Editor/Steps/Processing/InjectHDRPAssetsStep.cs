@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 #if UNITY_6000_0_OR_NEWER
 using UnityEngine.Rendering;
+using UnityEditor.Rendering;
 #if HAS_HDRP
 using UnityEngine.Rendering.HighDefinition;
 #endif
@@ -83,7 +84,7 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
 #if HAS_HDRP
             GraphicsSettings.defaultRenderPipeline = hdrpPipelineAsset as RenderPipelineAsset;
             QualitySettings.renderPipeline = hdrpPipelineAsset as RenderPipelineAsset;
-            GraphicsSettings.RegisterRenderPipelineSettings<HDRenderPipeline>(hdrpSettings as RenderPipelineGlobalSettings);
+            EditorGraphicsSettings.SetRenderPipelineGlobalSettingsAsset(typeof(UnityEngine.Rendering.HighDefinition.HDRenderPipeline), hdrpSettings as RenderPipelineGlobalSettings);
             
             Debug.Log($"Set GraphicsSettings.defaultRenderPipeline and QualitySettings.renderPipeline to \"{hdrpPipelineAssetPath}\"");
             Debug.Log($"Registered Global Settings to \"{hdrpSettingsPath}\"");

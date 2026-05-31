@@ -887,7 +887,8 @@ namespace Nomnom.UnityProjectPatcher.Editor {
                     Debug.LogError($"Failed to load {path}.\n{e}");
                 }
                 finally {
-                    if (obj && !(obj is GameObject || obj is Component || obj is AssetBundle)) {
+                    // fixed some Unity 6000+ GameManager errors
+                    if (obj && !(obj is GameObject || obj is Component || obj is AssetBundle || obj is UnityEditor.DefaultAsset || obj is UnityEditor.SceneAsset || obj is UnityEditor.MonoScript || obj is ScriptableObject)) {
                         Resources.UnloadAsset(obj);
                     }
                 }
@@ -911,7 +912,9 @@ namespace Nomnom.UnityProjectPatcher.Editor {
 
             foreach (var mono in nonMonos) {
                 if (mono.Item1) {
+#if !UNITY_6000_0_OR_NEWER
                     Resources.UnloadAsset(mono.Item1);
+#endif
                 }
             }
             
