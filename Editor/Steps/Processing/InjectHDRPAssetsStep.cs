@@ -4,6 +4,12 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_6000_0_OR_NEWER
+using UnityEngine.Rendering;
+#if HAS_HDRP
+using UnityEngine.Rendering.HighDefinition;
+#endif
+#endif
 using Object = UnityEngine.Object;
 
 namespace Nomnom.UnityProjectPatcher.Editor.Steps {
@@ -13,8 +19,6 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
     /// <br/><br/>
     /// Restarts the editor.
     /// </summary>
-    
-    // May need to be Updated for Unity 6000+ in the future
     public readonly struct InjectHDRPAssetsStep: IPatcherStep {
         // [MenuItem("Tools/UPP/Inject HDRP Assets (Will be removed)")]
         // public static void Foo() {
@@ -71,12 +75,25 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
             }
             
             var hdrpSettings = AssetDatabase.LoadMainAssetAtPath(hdrpSettingsPath);
+            var hdrpPipelineAsset = AssetDatabase.LoadMainAssetAtPath(hdrpPipelineAssetPath);
             var projectGraphicsAsset = PatcherUtility.GetGraphicsSettings();
             var serializedObject = new SerializedObject(projectGraphicsAsset);
+
+#if UNITY_6000_0_OR_NEWER
+#if HAS_HDRP
+            GraphicsSettings.defaultRenderPipeline = hdrpPipelineAsset as RenderPipelineAsset;
+            QualitySettings.renderPipeline = hdrpPipelineAsset as RenderPipelineAsset;
+            GraphicsSettings.RegisterRenderPipelineSettings<HDRenderPipeline>(hdrpSettings as RenderPipelineGlobalSettings);
+            
+            Debug.Log($"Set GraphicsSettings.defaultRenderPipeline and QualitySettings.renderPipeline to \"{hdrpPipelineAssetPath}\"");
+            Debug.Log($"Registered Global Settings to \"{hdrpSettingsPath}\"");
+#else
+            Debug.LogError("Failed to inject HDRP: The High Definition Render Pipeline package is not installed in this project.");
+#endif
+#else
             var iter = serializedObject.GetIterator();
             iter.Next(true);
             while (iter.Next(true)) {
-                // Debug.Log($"{iter.propertyPath} -> {iter.type}");
                 if (iter.propertyPath == "m_CustomRenderPipeline") {
                     iter.objectReferenceValue = hdrpSettings;
                     serializedObject.ApplyModifiedPropertiesWithoutUndo();
@@ -91,15 +108,15 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
                 return UniTask.FromResult(StepResult.Success);
             }
             
-            customRenderPipelineProperty.objectReferenceValue = AssetDatabase.LoadMainAssetAtPath(hdrpPipelineAssetPath);
+            customRenderPipelineProperty.objectReferenceValue = hdrpPipelineAsset;
             customRenderPipelineProperty.serializedObject.ApplyModifiedPropertiesWithoutUndo();
             
             Debug.Log($"Set m_QualitySettings.customRenderPipeline to \"{hdrpPipelineAssetPath}\"");
-            
+#endif
+
             serializedObject = new SerializedObject(hdrpSettings);
             var volumeProfile = serializedObject.FindProperty("m_DefaultVolumeProfile");
             if (volumeProfile != null) {
-                // var newSettingsPath = Path.Combine(settings.ProjectGameAssetsPath, soFolder, "UnityEngine", "VolumeProfile", "DefaultSettingsVolumeProfile.asset").ToAssetDatabaseSafePath();
                 var newSettingsPath = Path.Combine(settings.ProjectGameAssetsPath, soFolder, "DefaultSettingsVolumeProfile.asset").ToAssetDatabaseSafePath();
                 var newSettings = AssetDatabase.LoadAssetAtPath<Object>(newSettingsPath);
                 if (newSettings) {
@@ -107,7 +124,7 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
                     serializedObject.ApplyModifiedProperties();
                     Debug.Log($"Set m_DefaultVolumeProfile to one found at \"{newSettingsPath}\"");
             
-                    // this is so jank
+#if !UNITY_6000_0_OR_NEWER
                     try {
                         serializedObject = new SerializedObject(projectGraphicsAsset);
                         var iterator = serializedObject.GetIterator();
@@ -124,6 +141,7 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
                     } catch (Exception e) {
                         Debug.LogError($"Failed to set m_SRPDefaultSettings to \"{hdrpSettingsPath}\": {e}");
                     }
+#endif
                 } else {
                     Debug.LogWarning($"Could not find DefaultSettingsVolumeProfile at \"{newSettingsPath}\"");
                 }

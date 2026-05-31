@@ -3,7 +3,9 @@
     "references": [
         "GUID:f51ebe6a0ceec4240a699833d6309b23",
         "GUID:d622a80a03e90ec48afe2a9c4bacce98",
-        "GUID:febaf25a60dafbd44941357b21678606"
+        "GUID:febaf25a60dafbd44941357b21678606",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.HighDefinition.Runtime"
     ],
     "includePlatforms": [
         "Editor"
@@ -14,6 +16,17 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "",
+            "define": "HAS_URP"
+        },
+        {
+            "name": "com.unity.render-pipelines.high-definition",
+            "expression": "",
+            "define": "HAS_HDRP"
+        }
+    ],
     "noEngineReferences": false
 }

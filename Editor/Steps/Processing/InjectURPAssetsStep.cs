@@ -3,14 +3,18 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_6000_0_OR_NEWER
+using UnityEngine.Rendering;
+#if HAS_URP
+using UnityEngine.Rendering.Universal;
+#endif
+#endif
 
 namespace Nomnom.UnityProjectPatcher.Editor.Steps {
     /// <summary>
     /// This attempts to find URP related assets in the project and inject them into
     /// the SRP pipeline.
     /// </summary>
-    
-    // May need to be Updated for Unity 6000+ in the future
     public readonly struct InjectURPAssetsStep: IPatcherStep {
         public UniTask<StepResult> Run() {
             var settings = this.GetSettings();
@@ -57,6 +61,19 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
             
             var urpSettings = AssetDatabase.LoadMainAssetAtPath(urpSettingsPath);
             var urpGlobalSettings = AssetDatabase.LoadMainAssetAtPath(urpGlobalSettingsPath);
+
+#if UNITY_6000_0_OR_NEWER
+#if HAS_URP
+            GraphicsSettings.defaultRenderPipeline = urpSettings as RenderPipelineAsset;
+            QualitySettings.renderPipeline = urpSettings as RenderPipelineAsset;
+            GraphicsSettings.RegisterRenderPipelineSettings<UniversalRenderPipeline>(urpGlobalSettings as RenderPipelineGlobalSettings);
+            
+            Debug.Log($"Set GraphicsSettings.defaultRenderPipeline and QualitySettings.renderPipeline to \"{urpSettingsPath}\"");
+            Debug.Log($"Registered Global Settings to \"{urpGlobalSettingsPath}\"");
+#else
+            Debug.LogError("Failed to inject URP: The Universal Render Pipeline package is not installed in this project.");
+#endif
+#else
             var projectGraphicsAsset = PatcherUtility.GetGraphicsSettings();
             var serializedObject = new SerializedObject(projectGraphicsAsset);
             
@@ -84,6 +101,7 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
             customRenderPipelineProperty.serializedObject.ApplyModifiedPropertiesWithoutUndo();
             
             Debug.Log($"Set m_QualitySettings.customRenderPipeline to \"{urpSettingsPath}\"");
+#endif
 
             return UniTask.FromResult(StepResult.Success);
         }

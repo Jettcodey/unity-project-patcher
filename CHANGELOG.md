@@ -1,8 +1,11 @@
-﻿# 1.1.20
+﻿# 1.1.21
+- Updating `URP` and `HDRP` Injection Steps for Unity 6000+
+
+# 1.1.20
 - Integrated the Unity TMP Import fix for Unity 6000+
 
 # 1.1.19
-- fixed an Small issue with `ChangeSceneListStep` with Untiy versions below 6000+
+- fixed an Small issue with `ChangeSceneListStep` for versions below Unity 6000
 
 # 1.1.18
 - Starting work on adding support for Unity version 6000+
