@@ -1,4 +1,8 @@
-﻿# 1.1.22
+﻿# 1.1.23
+- Path normalization for `CopyGamePluginsStep`
+- Add missing `.gitattributes` file
+
+# 1.1.22
 - Dont use deprecated API Calls for the `URP` and `HDRP` Injection Steps for Unity 6000+
 - Fix error log spam caused by `AssetScrubber` caused by force unloading assets it shouldn't
 

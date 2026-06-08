@@ -24,8 +24,12 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
             for (var i = 0; i < dlls.Count; i++) {
                 var dll = dlls[i];
                 try {
-                    var fromPath = Path.Combine(gameManagedPath, dll.sourceName);
-                    var toPath = Path.Combine(projectPluginsPath, dll.outputPath, Path.GetFileName(dll.sourceName));
+                    // Path normalization
+                    var SourceName = dll.sourceName.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+                    var OutputPath = string.IsNullOrEmpty(dll.outputPath) ? string.Empty : dll.outputPath.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+
+                    var fromPath = Path.GetFullPath(Path.Combine(gameManagedPath, SourceName));
+                    var toPath = Path.GetFullPath(Path.Combine(projectPluginsPath, OutputPath, Path.GetFileName(SourceName)));
 
                     EditorUtility.DisplayProgressBar("Copying game dlls", $"Copying {fromPath} to {toPath}", (float)i / dlls.Count);
 
@@ -47,8 +51,8 @@ namespace Nomnom.UnityProjectPatcher.Editor.Steps {
                     File.Copy(fromPath, toPath, overwrite: true);
                     copiedOne = true;
                 } catch {
-                    Debug.LogError($"Failed to copy {dll.sourceName} to {dll.outputPath}");
-                    // throw;
+                    var SourceNameLog = dll.sourceName.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+                    Debug.LogError($"Failed to copy {SourceNameLog} to {dll.outputPath}");
                 }
                 finally {
                     EditorUtility.ClearProgressBar();
