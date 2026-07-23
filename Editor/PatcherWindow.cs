@@ -89,6 +89,10 @@ namespace Nomnom.UnityProjectPatcher.Editor {
         private static IEnumerable<PackageVersion> GetPackageVersions() {
             // check tool version
             var packages = PatcherUtility.GetPackages();
+            if (packages is null) {
+                Debug.LogWarning("Failed to fetch package list, skipping version check.");
+                yield break;
+            }
             var toolGit = "https://github.com/Jettcodey/unity-project-patcher";
             var gameWrapper = PatcherUtility.GetGameWrapperAttribute();
             
@@ -162,7 +166,7 @@ namespace Nomnom.UnityProjectPatcher.Editor {
             _gameWrapperVersion = gameVersion;
 
             // check packages
-            _hasBepInExPackage = _packageCollection.Any(x => x.name == "com.nomnom.unity-project-patcher-bepinex");
+            _hasBepInExPackage = _packageCollection?.Any(x => x.name == "com.nomnom.unity-project-patcher-bepinex") ?? false;
             _hasBepInExFlag = PatcherUtility.GetScriptingDefineSymbols().Contains("ENABLE_BEPINEX");
             _foundPackageAttribute = PatcherUtility.GetGameWrapperAttribute();
             // _hasGameWrapperPackage = false;

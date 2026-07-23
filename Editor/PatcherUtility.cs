@@ -132,6 +132,9 @@ namespace Nomnom.UnityProjectPatcher.Editor {
         public static (string version, string gameWrapperVersion) GetVersions(PackageCollection packages) {
             EditorUtility.DisplayProgressBar("Fetching...", "Fetching versions...", 0.5f);
             try {
+                if (packages is null) {
+                    return (null, null);
+                }
                 var patcher = packages.FirstOrDefault(x => x.name == "com.nomnom.unity-project-patcher");
                 (string, string) results = (null, null);
                 if (patcher != null) {

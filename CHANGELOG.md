@@ -1,4 +1,7 @@
-﻿# 1.1.23
+﻿# 1.1.24
+- Fix NRE in PatcherWindow/Utility when package list fetch fails
+
+# 1.1.23
 - Path normalization for `CopyGamePluginsStep`
 - Add missing `.gitattributes` file
 
